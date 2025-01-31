@@ -26,17 +26,21 @@ function App() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        setUser(currentUser);
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setProfilePhoto(userData.photo || null);
+      try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          setUser(currentUser);
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setProfilePhoto(userData.photo || null);
+          }
+        } else {
+          setUser(null);
+          setProfilePhoto(null);
         }
-      } else {
-        setUser(null);
-        setProfilePhoto(null);
+      } catch (error) {
+        console.error("Erreur lors de la récupération du profil utilisateur:", error);
       }
     };
 

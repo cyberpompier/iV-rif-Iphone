@@ -102,7 +102,7 @@ function Vehicules() {
   const handleCommentSubmit = async (event) => {
     event.preventDefault();
     const comment = event.target.comment.value;
-    const signedComment = userProfile ? `${userProfile.grade} ${userProfile.nom}: ${comment}` : comment;
+    const signedComment = userProfile ? `${userProfile.grade} ${userProfile.nom} ${userProfile.prenom}:\n${comment}` : comment;
     setComments({ ...comments, [commentPopup.id]: signedComment });
     setCommentPopup({ show: false, index: null, id: null });
     try {
@@ -128,7 +128,7 @@ function Vehicules() {
       <div className="page-title">Véhicules</div>
       <div className="add-button" onClick={toggleForm}>+</div>
       {showForm && (
-        <form className="form-container" onSubmit={addVehicule}>
+        <form onSubmit={addVehicule} className="form-container">
           <h3>Ajouter un Véhicule</h3>
           <input name="nom" type="text" placeholder="denomination" required />
           <input name="immatriculation" type="text" placeholder="Immatriculation" required />
@@ -175,7 +175,7 @@ function Vehicules() {
       {viewComment && (
         <div className="popup" onClick={closePopup}>
           <div className="comment-view">
-            <p>{viewComment}</p>
+            <p className="signed-comment">{viewComment}</p>
             <button onClick={closePopup}>Fermer</button>
           </div>
         </div>

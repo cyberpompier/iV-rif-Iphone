@@ -102,7 +102,7 @@ function Materiel() {
   const handleCommentSubmit = async (event) => {
     event.preventDefault();
     const comment = event.target.comment.value;
-    const signedComment = userProfile ? `${userProfile.grade} ${userProfile.nom}: ${comment}` : comment;
+    const signedComment = userProfile ? `${userProfile.grade} ${userProfile.nom} ${userProfile.prenom}:\n${comment}` : comment;
     setComments({ ...comments, [commentPopup.id]: signedComment });
     setCommentPopup({ show: false, index: null, id: null });
     try {
@@ -175,7 +175,7 @@ function Materiel() {
       {viewComment && (
         <div className="popup" onClick={closePopup}>
           <div className="comment-view">
-            <p>{viewComment}</p>
+            <p className="signed-comment">{viewComment}</p>
             <button onClick={closePopup}>Fermer</button>
           </div>
         </div>
