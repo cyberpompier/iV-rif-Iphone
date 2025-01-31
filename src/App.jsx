@@ -2,6 +2,8 @@ import React from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import Connexion from './pages/Connexion';
+import Signup from './pages/Signup';
+import Login from './pages/Login';
 import Profil from './pages/Profil';
 import Vehicules from './pages/Vehicules';
 import Materiel from './pages/Materiel';
@@ -39,6 +41,8 @@ function App() {
               </div>
             } />
             <Route path="/connexion" element={<Connexion />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/profil" element={<Profil />} />
             <Route path="/vehicules" element={<Vehicules />} />
             <Route path="/materiel" element={<Materiel />} />

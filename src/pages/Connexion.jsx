@@ -8,6 +8,10 @@ function Connexion() {
         <span className="chevron">‹</span> iVérif
       </Link>
       <div className="page-title">Connexion</div>
+      <div className="auth-links">
+        <Link to="/signup" className="auth-link">S'inscrire</Link>
+        <Link to="/login" className="auth-link">Se connecter</Link>
+      </div>
     </div>
   );
 }
