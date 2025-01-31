@@ -1,29 +1,32 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import supabase from '../supabaseClient';
+import { Link, useNavigate } from 'react-router-dom';
+import { auth } from '../firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = async (event) => {
     event.preventDefault();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setMessage(error.message);
-    } else {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
       setMessage('Connexion réussie!');
+      navigate('/');
+    } catch (error) {
+      setMessage(error.message);
     }
   };
 
   return (
     <div className="page">
-      <Link to="/connexion" className="back-button">
-        <span className="chevron">‹</span> Retour
+      <Link to="/" className="back-button">
+        <span className="chevron">‹</span> iVérif
       </Link>
-      <h2>Connexion</h2>
-      <form onSubmit={handleLogin}>
+      <div className="page-title">Connexion</div>
+      <form onSubmit={handleLogin} className="form-container">
         <input
           type="email"
           placeholder="Email"
@@ -41,6 +44,9 @@ function Login() {
         <button type="submit">Se connecter</button>
       </form>
       {message && <p>{message}</p>}
+      <div className="auth-links">
+        <Link to="/signup" className="auth-link">S'inscrire</Link>
+      </div>
     </div>
   );
 }

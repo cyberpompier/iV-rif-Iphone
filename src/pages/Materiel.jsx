@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { db } from '../firebase';
+import { collection, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
 
 function Materiel() {
   const [showForm, setShowForm] = useState(false);
   const [materiels, setMateriels] = useState([]);
   const [popupImage, setPopupImage] = useState(null);
-  const [commentPopup, setCommentPopup] = useState({ show: false, index: null });
+  const [commentPopup, setCommentPopup] = useState({ show: false, index: null, id: null });
   const [comments, setComments] = useState({});
   const [viewComment, setViewComment] = useState(null);
 
@@ -13,21 +15,43 @@ function Materiel() {
     setShowForm(!showForm);
   };
 
-  const addMateriel = (event) => {
+  useEffect(() => {
+    const fetchMateriels = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'materials'));
+        const fetchedMateriels = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setMateriels(fetchedMateriels);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des matériels:", error);
+      }
+    };
+
+    fetchMateriels();
+  }, []);
+
+  const addMateriel = async (event) => {
     event.preventDefault();
     const formData = new FormData(event.target);
     const newMateriel = {
-      nom: formData.get('nom'),
-      quantite: formData.get('quantite'),
+      denomination: formData.get('nom'),
+      quantity: formData.get('quantite'),
       affection: formData.get('affection'),
       lien: formData.get('lien'),
       emplacement: formData.get('emplacement'),
       photo: formData.get('photo'),
-      status: '' // Initial status
+      status: ''
     };
-    setMateriels([...materiels, newMateriel]);
-    event.target.reset();
-    setShowForm(false);
+    try {
+      const docRef = await addDoc(collection(db, 'materials'), newMateriel);
+      setMateriels(prevMateriels => [...prevMateriels, { ...newMateriel, id: docRef.id }]);
+      event.target.reset();
+      setShowForm(false);
+    } catch (error) {
+      console.error("Erreur lors de l'ajout du matériel:", error);
+    }
   };
 
   const viewPhoto = (url) => {
@@ -39,34 +63,45 @@ function Materiel() {
     setViewComment(null);
   };
 
-  const updateStatus = (index, status) => {
-    const updatedMateriels = materiels.map((materiel, i) => 
+  const updateStatus = async (index, status, id) => {
+    const updatedMateriels = materiels.map((materiel, i) =>
       i === index ? { ...materiel, status } : materiel
     );
     setMateriels(updatedMateriels);
-
-    if (status === 'ok') {
-      const updatedComments = { ...comments };
-      delete updatedComments[index];
-      setComments(updatedComments);
-    } else {
-      setCommentPopup({ show: true, index });
+    try {
+      const materielDocRef = doc(db, 'materials', id);
+      await updateDoc(materielDocRef, { status });
+      if (status === 'ok') {
+        const updatedComments = { ...comments };
+        delete updatedComments[id];
+        setComments(updatedComments);
+        await updateDoc(materielDocRef, { comment: null });
+      } else {
+        setCommentPopup({ show: true, index, id });
+      }
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du statut:", error);
     }
   };
 
-  const handleCommentSubmit = (event) => {
+  const handleCommentSubmit = async (event) => {
     event.preventDefault();
     const comment = event.target.comment.value;
-    setComments({ ...comments, [commentPopup.index]: comment });
-    setCommentPopup({ show: false, index: null });
+    setComments({ ...comments, [commentPopup.id]: comment });
+    setCommentPopup({ show: false, index: null, id: null });
+    try {
+      await updateDoc(doc(db, 'materials', commentPopup.id), { comment });
+    } catch (error) {
+      console.error("Erreur lors de l'ajout du commentaire:", error);
+    }
   };
 
-  const handleViewComment = (index) => {
-    setViewComment(comments[index]);
+  const handleViewComment = (id) => {
+    setViewComment(comments[id]);
   };
 
   const handleCancelComment = () => {
-    setCommentPopup({ show: false, index: null });
+    setCommentPopup({ show: false, index: null, id: null });
   };
 
   return (
@@ -88,23 +123,25 @@ function Materiel() {
           <button type="submit">Ajouter</button>
         </form>
       )}
-      {materiels.map((materiel, index) => (
-        <div key={index} className="label-item">
-          <img src={materiel.photo} alt={materiel.nom} onClick={() => viewPhoto(materiel.photo)} />
-          <div className={`label-title ${materiel.status}`}>
-            <strong>{materiel.nom}</strong><br />
-            Quantité: {materiel.quantite}<br />
-            Affection: {materiel.affection}<br />
-            Emplacement: {materiel.emplacement}
+      <div className="label-grid">
+        {materiels.map((materiel, index) => (
+          <div key={materiel.id} className="label-item">
+            <img src={materiel.photo} alt={materiel.denomination} onClick={() => viewPhoto(materiel.photo)} />
+            <div className={`label-title ${materiel.status}`}>
+              <strong>{materiel.denomination}</strong><br />
+              Quantité: {materiel.quantity}<br />
+              Affection: {materiel.affection}<br />
+              Emplacement: {materiel.emplacement}
+            </div>
+            <div className="label-icons">
+              <span onClick={() => updateStatus(index, 'ok', materiel.id)}>✔️</span>
+              <span onClick={() => updateStatus(index, 'anomalie', materiel.id)}>⚠️</span>
+              <span onClick={() => updateStatus(index, 'manquant', materiel.id)}>❌</span>
+              {comments[materiel.id] && <span onClick={() => handleViewComment(materiel.id)}>💬</span>}
+            </div>
           </div>
-          <div className="label-icons">
-            <span onClick={() => updateStatus(index, 'ok')}>✔️</span>
-            <span onClick={() => updateStatus(index, 'anomalie')}>⚠️</span>
-            <span onClick={() => updateStatus(index, 'manquant')}>❌</span>
-            {comments[index] && <span onClick={() => handleViewComment(index)}>💬</span>}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
       {popupImage && (
         <div className="popup" onClick={closePopup}>
           <img src={popupImage} alt="Popup" />

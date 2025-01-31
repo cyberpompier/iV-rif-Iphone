@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
+import { auth, db } from './firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import Connexion from './pages/Connexion';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
@@ -19,15 +21,48 @@ function App() {
   ];
 
   const location = useLocation();
+  const [user, setUser] = useState(null);
+  const [profilePhoto, setProfilePhoto] = useState(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        setUser(currentUser);
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setProfilePhoto(userData.photo || null);
+        }
+      } else {
+        setUser(null);
+        setProfilePhoto(null);
+      }
+    };
+
+    fetchUser();
+
+    const unsubscribe = auth.onAuthStateChanged(fetchUser);
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className="app-container">
+      <div className="app-header">
+        <div className="header-content">
+          <h1>iVérif</h1>
+          {user && profilePhoto && (
+            <div className="profile-bubble">
+              <img src={profilePhoto} alt="Profile" />
+            </div>
+          )}
+        </div>
+      </div>
       <TransitionGroup>
         <CSSTransition key={location.key} classNames="slide" timeout={300}>
           <Routes location={location}>
             <Route path="/" element={
               <div className="settings-menu">
-                <h1>iVérif</h1>
                 <ul>
                   {menuItems.map((item) => (
                     <li key={item.name}>

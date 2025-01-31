@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import supabase from '../supabaseClient';
+import { Link, useNavigate } from 'react-router-dom';
+import { auth, db } from '../firebase';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 function Profil() {
   const [nom, setNom] = useState('');
@@ -10,15 +11,33 @@ function Profil() {
   const [photo, setPhoto] = useState('');
   const [message, setMessage] = useState('');
   const [userId, setUserId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        setMessage(`Erreur: ${error.message}`);
-      } else if (data.session) {
-        setUserId(data.session.user.id);
+      setLoading(true);
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          setUserId(user.uid);
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setNom(userData.nom || '');
+            setPrenom(userData.prenom || '');
+            setGrade(userData.grade || '');
+            setCaserne(userData.caserne || '');
+            setPhoto(userData.photo || '');
+          }
+        } else {
+          setMessage('Utilisateur non connecté.');
+        }
+      } catch (error) {
+        setMessage(`Erreur de chargement du profil: ${error.message}`);
       }
+      setLoading(false);
     };
 
     fetchUser();
@@ -28,21 +47,30 @@ function Profil() {
     event.preventDefault();
 
     if (userId) {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: userId,
-          nom,
-          prenom,
-          grade,
-          caserne,
-          photo
-        }, { onConflict: ['id'] });
-
-      if (error) {
-        setMessage(`Erreur: ${error.message}`);
-      } else {
+      try {
+        const userDocRef = doc(db, 'users', userId);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          await updateDoc(userDocRef, {
+            nom,
+            prenom,
+            grade,
+            caserne,
+            photo
+          });
+        } else {
+          await setDoc(userDocRef, {
+            nom,
+            prenom,
+            grade,
+            caserne,
+            photo
+          });
+        }
         setMessage('Profil mis à jour avec succès!');
+        navigate('/');
+      } catch (error) {
+        setMessage(`Erreur de mise à jour du profil: ${error.message}`);
       }
     } else {
       setMessage('Utilisateur non connecté.');
@@ -55,44 +83,48 @@ function Profil() {
         <span className="chevron">‹</span> iVérif
       </Link>
       <div className="page-title">Profil</div>
-      <form onSubmit={handleSubmit} className="form-container">
-        <input
-          type="text"
-          placeholder="Nom"
-          value={nom}
-          onChange={(e) => setNom(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Prénom"
-          value={prenom}
-          onChange={(e) => setPrenom(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Grade"
-          value={grade}
-          onChange={(e) => setGrade(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Caserne"
-          value={caserne}
-          onChange={(e) => setCaserne(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Photo (URL)"
-          value={photo}
-          onChange={(e) => setPhoto(e.target.value)}
-          required
-        />
-        <button type="submit">Valider</button>
-      </form>
+      {loading ? (
+        <p>Chargement du profil...</p>
+      ) : (
+        <form onSubmit={handleSubmit} className="form-container">
+          <input
+            type="text"
+            placeholder="Nom"
+            value={nom}
+            onChange={(e) => setNom(e.target.value)}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Prénom"
+            value={prenom}
+            onChange={(e) => setPrenom(e.target.value)}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Grade"
+            value={grade}
+            onChange={(e) => setGrade(e.target.value)}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Caserne"
+            value={caserne}
+            onChange={(e) => setCaserne(e.target.value)}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Photo (URL)"
+            value={photo}
+            onChange={(e) => setPhoto(e.target.value)}
+            required
+          />
+          <button type="submit">Valider</button>
+        </form>
+      )}
       {message && <p>{message}</p>}
     </div>
   );

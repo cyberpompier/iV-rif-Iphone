@@ -2,14 +2,27 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f2f2f7; /* Same background color for all pages */
+  background-color: #f2f2f7;
   height: 100vh;
   overflow: hidden;
 }
 
 .app-container {
   height: 100%;
-  background-color: #f2f2f7; /* Ensure the app container has the same background */
+  background-color: #f2f2f7;
+}
+
+.app-header {
+  background-color: #fff;
+  padding: 2vw 5vw;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .settings-menu {
@@ -87,9 +100,9 @@ body {
   align-items: center;
   justify-content: flex-start;
   font-size: 5vw;
-  background-color: #f2f2f7; /* Same background color for all pages */
+  background-color: #f2f2f7;
   position: relative;
-  padding-top: 15vw; /* Space for the back button */
+  padding-top: 15vw;
 }
 
 .back-button {
@@ -158,18 +171,207 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 20vw;
+  margin-top: 5vw;
 }
 
 .auth-link {
-  font-size: 5vw;
+  font-size: 4vw;
   color: #007aff;
   text-decoration: none;
-  margin-bottom: 5vw;
+  margin-bottom: 3vw;
 }
 
 .auth-link:hover {
   text-decoration: underline;
+}
+
+.auth-button {
+  width: 100%;
+  padding: 3vw;
+  margin-bottom: 3vw;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #007aff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  font-size: 4vw;
+}
+
+.auth-button:hover {
+  background-color: #005bb5;
+}
+
+.label-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 3vw;
+  margin-top: 3vw;
+  width: 95%;
+}
+
+.label-item {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  padding: 3vw;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.label-item img {
+  width: 12vw;
+  height: 12vw;
+  border-radius: 4px;
+  margin-right: 3vw;
+  cursor: pointer;
+}
+
+.label-title {
+  flex: 1;
+  font-size: 3.5vw;
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.label-title.ok {
+  color: green;
+}
+
+.label-title.anomalie {
+  color: orange;
+}
+
+.label-title.manquant {
+  color: red;
+}
+
+.label-icons {
+  position: absolute;
+  right: 3vw;
+  display: flex;
+  gap: 2vw;
+}
+
+.label-icons span {
+  font-size: 4vw;
+  cursor: pointer;
+}
+
+.label-icons span:first-child {
+  color: green;
+}
+
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.popup img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 8px;
+}
+
+.comment-form {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 80%;
+  max-width: 400px;
+}
+
+.comment-form textarea {
+  width: 100%;
+  height: 100px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  resize: none;
+}
+
+.comment-form button {
+  width: 48%;
+  padding: 10px;
+  background-color: #007aff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 4%;
+}
+
+.comment-form button:last-child {
+  background-color: #ccc;
+  margin-right: 0;
+}
+
+.comment-form button:hover {
+  background-color: #005bb5;
+}
+
+.comment-form button:last-child:hover {
+  background-color: #999;
+}
+
+.comment-view {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 80%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.comment-view p {
+  margin-bottom: 20px;
+}
+
+.comment-view button {
+  padding: 10px;
+  background-color: #007aff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.comment-view button:hover {
+  background-color: #005bb5;
+}
+
+.profile-bubble {
+  width: 12vw;
+  height: 12vw;
+  border-radius: 50%;
+  overflow: hidden;
+  position: absolute;
+  right: 5vw;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 2px solid #ccc;
+}
+
+.profile-bubble img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 @media (min-width: 768px) {
@@ -183,6 +385,11 @@ body {
   .icon,
   .chevron {
     font-size: 20px;
+  }
+
+  .form-container {
+    margin-top: 10vw;
+    padding: 3vw;
   }
 
   .form-container input,
@@ -203,7 +410,17 @@ body {
     font-size: 18px;
   }
 
+  .profile-bubble {
+    width: 75px;
+    height: 75px;
+  }
+
   .auth-link {
-    font-size: 20px;
+    font-size: 16px;
+  }
+
+  .auth-button {
+    font-size: 16px;
+    padding: 10px;
   }
 }

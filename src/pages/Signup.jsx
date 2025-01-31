@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import supabase from '../supabaseClient';
+import { auth } from '../firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 function Signup() {
   const [email, setEmail] = useState('');
@@ -9,11 +10,11 @@ function Signup() {
 
   const handleSignup = async (event) => {
     event.preventDefault();
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) {
-      setMessage(error.message);
-    } else {
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
       setMessage('Inscription réussie! Veuillez vérifier votre email pour confirmer.');
+    } catch (error) {
+      setMessage(error.message);
     }
   };
 
