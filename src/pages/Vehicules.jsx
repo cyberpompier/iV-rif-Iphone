@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { db } from '../firebase';
-import { collection, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { collection, getDocs, addDoc, updateDoc, doc, getDoc } from 'firebase/firestore';
 
 function Vehicules() {
   const [showForm, setShowForm] = useState(false);
@@ -10,6 +10,7 @@ function Vehicules() {
   const [commentPopup, setCommentPopup] = useState({ show: false, index: null, id: null });
   const [comments, setComments] = useState({});
   const [viewComment, setViewComment] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
 
   const toggleForm = () => {
     setShowForm(!showForm);
@@ -29,7 +30,22 @@ function Vehicules() {
       }
     };
 
+    const fetchUserProfile = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setUserProfile(userDoc.data());
+          }
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération du profil utilisateur:", error);
+      }
+    };
+
     fetchVehicules();
+    fetchUserProfile();
   }, []);
 
   const addVehicule = async (event) => {
@@ -86,10 +102,11 @@ function Vehicules() {
   const handleCommentSubmit = async (event) => {
     event.preventDefault();
     const comment = event.target.comment.value;
-    setComments({ ...comments, [commentPopup.id]: comment });
+    const signedComment = userProfile ? `${userProfile.grade} ${userProfile.nom}: ${comment}` : comment;
+    setComments({ ...comments, [commentPopup.id]: signedComment });
     setCommentPopup({ show: false, index: null, id: null });
     try {
-      await updateDoc(doc(db, 'vehicles', commentPopup.id), { comment });
+      await updateDoc(doc(db, 'vehicles', commentPopup.id), { comment: signedComment });
     } catch (error) {
       console.error("Erreur lors de l'ajout du commentaire:", error);
     }

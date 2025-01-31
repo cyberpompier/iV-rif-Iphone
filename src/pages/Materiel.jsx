@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { db } from '../firebase';
-import { collection, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { collection, getDocs, addDoc, updateDoc, doc, getDoc } from 'firebase/firestore';
 
 function Materiel() {
   const [showForm, setShowForm] = useState(false);
@@ -10,6 +10,7 @@ function Materiel() {
   const [commentPopup, setCommentPopup] = useState({ show: false, index: null, id: null });
   const [comments, setComments] = useState({});
   const [viewComment, setViewComment] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
 
   const toggleForm = () => {
     setShowForm(!showForm);
@@ -29,7 +30,22 @@ function Materiel() {
       }
     };
 
+    const fetchUserProfile = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setUserProfile(userDoc.data());
+          }
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération du profil utilisateur:", error);
+      }
+    };
+
     fetchMateriels();
+    fetchUserProfile();
   }, []);
 
   const addMateriel = async (event) => {
@@ -69,13 +85,12 @@ function Materiel() {
     );
     setMateriels(updatedMateriels);
     try {
-      const materielDocRef = doc(db, 'materials', id);
-      await updateDoc(materielDocRef, { status });
+      await updateDoc(doc(db, 'materials', id), { status });
       if (status === 'ok') {
         const updatedComments = { ...comments };
         delete updatedComments[id];
         setComments(updatedComments);
-        await updateDoc(materielDocRef, { comment: null });
+        await updateDoc(doc(db, 'materials', id), { comment: null });
       } else {
         setCommentPopup({ show: true, index, id });
       }
@@ -87,10 +102,11 @@ function Materiel() {
   const handleCommentSubmit = async (event) => {
     event.preventDefault();
     const comment = event.target.comment.value;
-    setComments({ ...comments, [commentPopup.id]: comment });
+    const signedComment = userProfile ? `${userProfile.grade} ${userProfile.nom}: ${comment}` : comment;
+    setComments({ ...comments, [commentPopup.id]: signedComment });
     setCommentPopup({ show: false, index: null, id: null });
     try {
-      await updateDoc(doc(db, 'materials', commentPopup.id), { comment });
+      await updateDoc(doc(db, 'materials', commentPopup.id), { comment: signedComment });
     } catch (error) {
       console.error("Erreur lors de l'ajout du commentaire:", error);
     }
