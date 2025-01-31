@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { db, auth } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, doc, getDoc } from 'firebase/firestore';
+import { serverTimestamp } from 'firebase/firestore';
 
 function Materiel() {
   const [showForm, setShowForm] = useState(false);
@@ -26,6 +27,18 @@ function Materiel() {
           ...doc.data()
         }));
         setMateriels(fetchedMateriels);
+        
+        // Récupérer les commentaires existants
+        const initialComments = {};
+        fetchedMateriels.forEach(materiel => {
+          if (materiel.comment) {
+            initialComments[materiel.id] = materiel.comment;
+            if (materiel.timestamp) {
+              initialComments[materiel.id + '_timestamp'] = materiel.timestamp;
+            }
+          }
+        });
+        setComments(initialComments);
       } catch (error) {
         console.error("Erreur lors de la récupération des matériels:", error);
       }
@@ -118,17 +131,18 @@ function Materiel() {
     event.preventDefault();
     const comment = event.target.comment.value;
     const signedComment = userProfile ? `${userProfile.grade} ${userProfile.nom} ${userProfile.prenom}:\n${comment}` : comment;
-    setComments({ ...comments, [commentPopup.id]: signedComment });
+    const timestamp = serverTimestamp();
+    setComments({ ...comments, [commentPopup.id]: signedComment, [commentPopup.id + '_timestamp']: timestamp });
     setCommentPopup({ show: false, index: null, id: null });
     try {
-      await updateDoc(doc(db, 'materials', commentPopup.id), { comment: signedComment });
+      await updateDoc(doc(db, 'materials', commentPopup.id), { comment: signedComment, timestamp });
     } catch (error) {
       console.error("Erreur lors de l'ajout du commentaire:", error);
     }
   };
 
   const handleViewComment = (id) => {
-    setViewComment(comments[id]);
+    setViewComment({ comment: comments[id], timestamp: comments[id + '_timestamp'] });
   };
 
   const handleCancelComment = () => {
@@ -194,7 +208,8 @@ function Materiel() {
       {viewComment && (
         <div className="popup" onClick={closePopup}>
           <div className="comment-view">
-            <p className="signed-comment">{viewComment}</p>
+            <p className="signed-comment">{viewComment.comment}</p>
+             {viewComment.timestamp && <p className="comment-timestamp">{new Date(viewComment.timestamp?.seconds * 1000).toLocaleString()}</p>}
             <button onClick={closePopup}>Fermer</button>
           </div>
         </div>
