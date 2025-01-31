@@ -11,6 +11,7 @@ function Vehicules() {
   const [comments, setComments] = useState({});
   const [viewComment, setViewComment] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState({ show: false, index: null, id: null });
 
   const toggleForm = () => {
     setShowForm(!showForm);
@@ -84,19 +85,33 @@ function Vehicules() {
       i === index ? { ...vehicule, status } : vehicule
     );
     setVehicules(updatedVehicules);
-    try {
-      await updateDoc(doc(db, 'vehicles', id), { status });
-      if (status === 'ok') {
-        const updatedComments = { ...comments };
-        delete updatedComments[id];
-        setComments(updatedComments);
-        await updateDoc(doc(db, 'vehicles', id), { comment: null });
-      } else {
-        setCommentPopup({ show: true, index, id });
+    if (status === 'ok') {
+      setConfirmDelete({ show: true, index, id });
+    } else {
+      setCommentPopup({ show: true, index, id });
+      try {
+        await updateDoc(doc(db, 'vehicles', id), { status });
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour du statut:", error);
       }
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour du statut:", error);
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    const { index, id } = confirmDelete;
+    const updatedVehicules = vehicules.map((vehicule, i) =>
+      i === index ? { ...vehicule, status: 'ok' } : vehicule
+    );
+    setVehicules(updatedVehicules);
+    const updatedComments = { ...comments };
+    delete updatedComments[id];
+    setComments(updatedComments);
+    try {
+      await updateDoc(doc(db, 'vehicles', id), { status: 'ok', comment: null });
+    } catch (error) {
+      console.error("Erreur lors de la suppression du commentaire:", error);
+    }
+    setConfirmDelete({ show: false, index: null, id: null });
   };
 
   const handleCommentSubmit = async (event) => {
@@ -118,6 +133,10 @@ function Vehicules() {
 
   const handleCancelComment = () => {
     setCommentPopup({ show: false, index: null, id: null });
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmDelete({ show: false, index: null, id: null });
   };
 
   return (
@@ -153,7 +172,7 @@ function Vehicules() {
               <span onClick={() => updateStatus(index, 'ok', vehicule.id)}>✔️</span>
               <span onClick={() => updateStatus(index, 'anomalie', vehicule.id)}>⚠️</span>
               <span onClick={() => updateStatus(index, 'manquant', vehicule.id)}>❌</span>
-              {comments[vehicule.id] && <span onClick={() => handleViewComment(vehicule.id)}>💬</span>}
+              {comments[vehicule.id] ? <span onClick={() => handleViewComment(vehicule.id)}>💬</span> : null}
             </div>
           </div>
         ))}
@@ -177,6 +196,15 @@ function Vehicules() {
           <div className="comment-view">
             <p className="signed-comment">{viewComment}</p>
             <button onClick={closePopup}>Fermer</button>
+          </div>
+        </div>
+      )}
+      {confirmDelete.show && (
+        <div className="popup">
+          <div className="comment-view">
+            <p>Êtes-vous sûr de vouloir supprimer ce commentaire ?</p>
+            <button onClick={handleConfirmDelete}>Confirmer</button>
+            <button onClick={handleCancelDelete}>Annuler</button>
           </div>
         </div>
       )}

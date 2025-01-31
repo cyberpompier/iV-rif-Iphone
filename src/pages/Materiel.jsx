@@ -11,6 +11,7 @@ function Materiel() {
   const [comments, setComments] = useState({});
   const [viewComment, setViewComment] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState({ show: false, index: null, id: null });
 
   const toggleForm = () => {
     setShowForm(!showForm);
@@ -84,19 +85,33 @@ function Materiel() {
       i === index ? { ...materiel, status } : materiel
     );
     setMateriels(updatedMateriels);
-    try {
-      await updateDoc(doc(db, 'materials', id), { status });
-      if (status === 'ok') {
-        const updatedComments = { ...comments };
-        delete updatedComments[id];
-        setComments(updatedComments);
-        await updateDoc(doc(db, 'materials', id), { comment: null });
-      } else {
-        setCommentPopup({ show: true, index, id });
+    if (status === 'ok') {
+      setConfirmDelete({ show: true, index, id });
+    } else {
+      setCommentPopup({ show: true, index, id });
+      try {
+        await updateDoc(doc(db, 'materials', id), { status });
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour du statut:", error);
       }
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour du statut:", error);
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    const { index, id } = confirmDelete;
+    const updatedMateriels = materiels.map((materiel, i) =>
+      i === index ? { ...materiel, status: 'ok' } : materiel
+    );
+    setMateriels(updatedMateriels);
+    const updatedComments = { ...comments };
+    delete updatedComments[id];
+    setComments(updatedComments);
+    try {
+      await updateDoc(doc(db, 'materials', id), { status: 'ok', comment: null });
+    } catch (error) {
+      console.error("Erreur lors de la suppression du commentaire:", error);
+    }
+    setConfirmDelete({ show: false, index: null, id: null });
   };
 
   const handleCommentSubmit = async (event) => {
@@ -120,6 +135,10 @@ function Materiel() {
     setCommentPopup({ show: false, index: null, id: null });
   };
 
+  const handleCancelDelete = () => {
+    setConfirmDelete({ show: false, index: null, id: null });
+  };
+
   return (
     <div className="page">
       <Link to="/" className="back-button">
@@ -128,7 +147,7 @@ function Materiel() {
       <div className="page-title">Matériel</div>
       <div className="add-button" onClick={toggleForm}>+</div>
       {showForm && (
-        <form className="form-container" onSubmit={addMateriel}>
+        <form onSubmit={addMateriel} className="form-container">
           <h3>Ajouter un Matériel</h3>
           <input name="nom" type="text" placeholder="Nom" required />
           <input name="quantite" type="number" placeholder="Quantité" required />
@@ -153,7 +172,7 @@ function Materiel() {
               <span onClick={() => updateStatus(index, 'ok', materiel.id)}>✔️</span>
               <span onClick={() => updateStatus(index, 'anomalie', materiel.id)}>⚠️</span>
               <span onClick={() => updateStatus(index, 'manquant', materiel.id)}>❌</span>
-              {comments[materiel.id] && <span onClick={() => handleViewComment(materiel.id)}>💬</span>}
+              {comments[materiel.id] ? <span onClick={() => handleViewComment(materiel.id)}>💬</span> : null}
             </div>
           </div>
         ))}
@@ -177,6 +196,15 @@ function Materiel() {
           <div className="comment-view">
             <p className="signed-comment">{viewComment}</p>
             <button onClick={closePopup}>Fermer</button>
+          </div>
+        </div>
+      )}
+      {confirmDelete.show && (
+        <div className="popup">
+          <div className="comment-view">
+            <p>Êtes-vous sûr de vouloir supprimer ce commentaire ?</p>
+            <button onClick={handleConfirmDelete}>Confirmer</button>
+            <button onClick={handleCancelDelete}>Annuler</button>
           </div>
         </div>
       )}
