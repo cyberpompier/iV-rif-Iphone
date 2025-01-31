@@ -19,7 +19,8 @@ function Vehicules() {
       type: formData.get('type'),
       caserne: formData.get('caserne'),
       lien: formData.get('lien'),
-      photo: formData.get('photo')
+      photo: formData.get('photo'),
+      status: '' // Initial status
     };
     setVehicules([...vehicules, newVehicule]);
     event.target.reset();
@@ -32,6 +33,13 @@ function Vehicules() {
 
   const closePopup = () => {
     setPopupImage(null);
+  };
+
+  const updateStatus = (index, status) => {
+    const updatedVehicules = vehicules.map((vehicule, i) => 
+      i === index ? { ...vehicule, status } : vehicule
+    );
+    setVehicules(updatedVehicules);
   };
 
   return (
@@ -56,16 +64,16 @@ function Vehicules() {
       {vehicules.map((vehicule, index) => (
         <div key={index} className="label-item">
           <img src={vehicule.photo} alt={vehicule.nom} onClick={() => viewPhoto(vehicule.photo)} />
-          <div>
+          <div className={`label-title ${vehicule.status}`}>
             <strong>{vehicule.nom}</strong><br />
             {vehicule.immatriculation}<br />
             {vehicule.type}<br />
             {vehicule.caserne}
           </div>
           <div className="label-icons">
-            <span>✔️</span>
-            <span>⚠️</span>
-            <span>❌</span>
+            <span onClick={() => updateStatus(index, 'ok')}>✔️</span>
+            <span onClick={() => updateStatus(index, 'anomalie')}>⚠️</span>
+            <span onClick={() => updateStatus(index, 'manquant')}>❌</span>
           </div>
         </div>
       ))}

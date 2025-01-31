@@ -5,6 +5,9 @@ function Materiel() {
   const [showForm, setShowForm] = useState(false);
   const [materiels, setMateriels] = useState([]);
   const [popupImage, setPopupImage] = useState(null);
+  const [commentPopup, setCommentPopup] = useState({ show: false, index: null });
+  const [comments, setComments] = useState({});
+  const [viewComment, setViewComment] = useState(null);
 
   const toggleForm = () => {
     setShowForm(!showForm);
@@ -19,7 +22,8 @@ function Materiel() {
       affection: formData.get('affection'),
       lien: formData.get('lien'),
       emplacement: formData.get('emplacement'),
-      photo: formData.get('photo')
+      photo: formData.get('photo'),
+      status: '' // Initial status
     };
     setMateriels([...materiels, newMateriel]);
     event.target.reset();
@@ -32,6 +36,37 @@ function Materiel() {
 
   const closePopup = () => {
     setPopupImage(null);
+    setViewComment(null);
+  };
+
+  const updateStatus = (index, status) => {
+    const updatedMateriels = materiels.map((materiel, i) => 
+      i === index ? { ...materiel, status } : materiel
+    );
+    setMateriels(updatedMateriels);
+
+    if (status === 'ok') {
+      const updatedComments = { ...comments };
+      delete updatedComments[index];
+      setComments(updatedComments);
+    } else {
+      setCommentPopup({ show: true, index });
+    }
+  };
+
+  const handleCommentSubmit = (event) => {
+    event.preventDefault();
+    const comment = event.target.comment.value;
+    setComments({ ...comments, [commentPopup.index]: comment });
+    setCommentPopup({ show: false, index: null });
+  };
+
+  const handleViewComment = (index) => {
+    setViewComment(comments[index]);
+  };
+
+  const handleCancelComment = () => {
+    setCommentPopup({ show: false, index: null });
   };
 
   return (
@@ -56,22 +91,40 @@ function Materiel() {
       {materiels.map((materiel, index) => (
         <div key={index} className="label-item">
           <img src={materiel.photo} alt={materiel.nom} onClick={() => viewPhoto(materiel.photo)} />
-          <div>
+          <div className={`label-title ${materiel.status}`}>
             <strong>{materiel.nom}</strong><br />
             Quantité: {materiel.quantite}<br />
             Affection: {materiel.affection}<br />
             Emplacement: {materiel.emplacement}
           </div>
           <div className="label-icons">
-            <span>✔️</span>
-            <span>⚠️</span>
-            <span>❌</span>
+            <span onClick={() => updateStatus(index, 'ok')}>✔️</span>
+            <span onClick={() => updateStatus(index, 'anomalie')}>⚠️</span>
+            <span onClick={() => updateStatus(index, 'manquant')}>❌</span>
+            {comments[index] && <span onClick={() => handleViewComment(index)}>💬</span>}
           </div>
         </div>
       ))}
       {popupImage && (
         <div className="popup" onClick={closePopup}>
           <img src={popupImage} alt="Popup" />
+        </div>
+      )}
+      {commentPopup.show && (
+        <div className="popup">
+          <form onSubmit={handleCommentSubmit} className="comment-form">
+            <textarea name="comment" placeholder="Ajouter un commentaire" required></textarea>
+            <button type="submit">Enregistrer</button>
+            <button type="button" onClick={handleCancelComment}>Annuler</button>
+          </form>
+        </div>
+      )}
+      {viewComment && (
+        <div className="popup" onClick={closePopup}>
+          <div className="comment-view">
+            <p>{viewComment}</p>
+            <button onClick={closePopup}>Fermer</button>
+          </div>
         </div>
       )}
     </div>
