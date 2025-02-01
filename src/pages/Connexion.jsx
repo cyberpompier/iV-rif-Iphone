@@ -55,8 +55,8 @@ function Connexion() {
       </form>
       {message && <p>{message}</p>}
       <div className="auth-links">
-        <Link to="/signup" className="auth-link auth-button">S'inscrire</Link>
-        <button onClick={handleLogout} className="auth-link auth-button">Déconnexion</button>
+        <Link to="/signup" className="auth-link auth-button signup-button">S'inscrire</Link>
+        <button onClick={handleLogout} className="auth-link auth-button logout">Déconnexion</button>
       </div>
     </div>
   );
