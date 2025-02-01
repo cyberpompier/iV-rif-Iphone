@@ -158,28 +158,16 @@ function Vehicules() {
         <span className="chevron">‹</span> iVérif
       </Link>
       <div className="page-title">Véhicules</div>
-      <div className="add-button" onClick={toggleForm}>+</div>
-      {showForm && (
-        <form onSubmit={addVehicule} className="form-container">
-          <h3>Ajouter un Véhicule</h3>
-          <input name="nom" type="text" placeholder="denomination" required />
-          <input name="immatriculation" type="text" placeholder="Immatriculation" required />
-          <input name="type" type="text" placeholder="vehicleType" required />
-          <input name="caserne" type="text" placeholder="Caserne" required />
-          <input name="lien" type="text" placeholder="Lien (facultatif)" />
-          <input name="photo" type="text" placeholder="Photo (URL)" required />
-          <button type="submit">Ajouter</button>
-        </form>
-      )}
+      
       <div className="label-grid">
         {vehicules.map((vehicule, index) => (
           <div key={vehicule.id} className="label-item">
             <img src={vehicule.photo} alt={vehicule.denomination} onClick={() => viewPhoto(vehicule.photo)} />
             <div className={`label-title ${vehicule.status}`}>
               <strong>{vehicule.denomination}</strong><br />
-              {vehicule.lien && (
-                <a href={vehicule.lien} target="_blank" rel="noopener noreferrer" className="link-icon">🔗</a>
-              )}
+              {vehicule.immatriculation}<br />
+              {vehicule.vehicleType}<br />
+              {vehicule.caserne}
             </div>
             <div className="label-icons">
               <span onClick={() => updateStatus(index, 'ok', vehicule.id)}>✔️</span>
