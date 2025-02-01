@@ -60,6 +60,7 @@ function App() {
               <img src={profilePhoto} alt="Profile" />
             </div>
           )}
+          <div className="rotating-beacon">🚨</div>
         </div>
       </div>
       <TransitionGroup>

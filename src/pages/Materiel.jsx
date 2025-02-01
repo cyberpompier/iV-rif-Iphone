@@ -8,7 +8,7 @@ function Materiel() {
   const [showForm, setShowForm] = useState(false);
   const [materiels, setMateriels] = useState([]);
   const [popupImage, setPopupImage] = useState(null);
-  const [commentPopup, setCommentPopup] = useState({ show: false, index: null, id: null });
+  const [commentPopup, setCommentPopup] = useState({ show: false, index: null, id: null, status: null });
   const [comments, setComments] = useState({});
   const [viewComment, setViewComment] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -101,7 +101,7 @@ function Materiel() {
     if (status === 'ok') {
       setConfirmDelete({ show: true, index, id });
     } else {
-      setCommentPopup({ show: true, index, id });
+      setCommentPopup({ show: true, index, id, status });
       try {
         await updateDoc(doc(db, 'materials', id), { status });
       } catch (error) {
@@ -133,7 +133,7 @@ function Materiel() {
     const signedComment = userProfile ? `${userProfile.grade} ${userProfile.nom} ${userProfile.prenom}:\n${comment}` : comment;
     const timestamp = serverTimestamp();
     setComments({ ...comments, [commentPopup.id]: signedComment, [commentPopup.id + '_timestamp']: timestamp });
-    setCommentPopup({ show: false, index: null, id: null });
+    setCommentPopup({ show: false, index: null, id: null, status: null });
     try {
       await updateDoc(doc(db, 'materials', commentPopup.id), { comment: signedComment, timestamp });
     } catch (error) {
@@ -146,7 +146,7 @@ function Materiel() {
   };
 
   const handleCancelComment = () => {
-    setCommentPopup({ show: false, index: null, id: null });
+    setCommentPopup({ show: false, index: null, id: null, status: null });
   };
 
   const handleCancelDelete = () => {
@@ -208,7 +208,8 @@ function Materiel() {
       {viewComment && (
         <div className="popup" onClick={closePopup}>
           <div className="comment-view">
-            <p className="signed-comment">{viewComment.comment}</p>
+            <div className="blinking-beacon">🚨</div>
+            <p className={`signed-comment ${viewComment.comment && viewComment.comment.includes('manquant') ? 'manquant' : viewComment.comment && viewComment.comment.includes('anomalie') ? 'anomalie' : ''}`}>{viewComment.comment}</p>
              {viewComment.timestamp && <p className="comment-timestamp">{new Date(viewComment.timestamp?.seconds * 1000).toLocaleString()}</p>}
             <button onClick={closePopup}>Fermer</button>
           </div>
