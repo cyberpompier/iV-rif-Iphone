@@ -8,11 +8,13 @@ function Materiel() {
   const [showForm, setShowForm] = useState(false);
   const [materiels, setMateriels] = useState([]);
   const [popupImage, setPopupImage] = useState(null);
-  const [commentPopup, setCommentPopup] = useState({ show: false, index: null, id: null, status: null });
+  const [commentPopup, setCommentPopup] = useState({ show: false, index: null, id: null });
   const [comments, setComments] = useState({});
   const [viewComment, setViewComment] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ show: false, index: null, id: null });
+  const [selectedVehicule, setSelectedVehicule] = useState('Tous');
+  const [vehicules, setVehicules] = useState([]);
 
   const toggleForm = () => {
     setShowForm(!showForm);
@@ -58,8 +60,22 @@ function Materiel() {
       }
     };
 
+    const fetchVehicules = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'vehicles'));
+        const fetchedVehicules = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setVehicules(fetchedVehicules);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des véhicules:", error);
+      }
+    };
+
     fetchMateriels();
     fetchUserProfile();
+    fetchVehicules();
   }, []);
 
   const addMateriel = async (event) => {
@@ -101,7 +117,7 @@ function Materiel() {
     if (status === 'ok') {
       setConfirmDelete({ show: true, index, id });
     } else {
-      setCommentPopup({ show: true, index, id, status });
+      setCommentPopup({ show: true, index, id });
       try {
         await updateDoc(doc(db, 'materials', id), { status });
       } catch (error) {
@@ -133,7 +149,7 @@ function Materiel() {
     const signedComment = userProfile ? `${userProfile.grade} ${userProfile.nom} ${userProfile.prenom}:\n${comment}` : comment;
     const timestamp = serverTimestamp();
     setComments({ ...comments, [commentPopup.id]: signedComment, [commentPopup.id + '_timestamp']: timestamp });
-    setCommentPopup({ show: false, index: null, id: null, status: null });
+    setCommentPopup({ show: false, index: null, id: null });
     try {
       await updateDoc(doc(db, 'materials', commentPopup.id), { comment: signedComment, timestamp });
     } catch (error) {
@@ -146,12 +162,29 @@ function Materiel() {
   };
 
   const handleCancelComment = () => {
-    setCommentPopup({ show: false, index: null, id: null, status: null });
+    setCommentPopup({ show: false, index: null, id: null });
   };
 
   const handleCancelDelete = () => {
     setConfirmDelete({ show: false, index: null, id: null });
   };
+
+  const handleVehiculeChange = (event) => {
+    setSelectedVehicule(event.target.value);
+  };
+
+  const filteredMateriels = selectedVehicule === 'Tous'
+    ? materiels
+    : materiels.filter(materiel => materiel.affection === selectedVehicule);
+
+  const groupedMateriels = filteredMateriels.reduce((acc, materiel) => {
+    const emplacement = materiel.emplacement || 'Non spécifié';
+    if (!acc[emplacement]) {
+      acc[emplacement] = [];
+    }
+    acc[emplacement].push(materiel);
+    return acc;
+  }, {});
 
   return (
     <div className="page">
@@ -159,38 +192,44 @@ function Materiel() {
         <span className="chevron">‹</span> iVérif
       </Link>
       <div className="page-title">Matériel</div>
-      <div className="add-button" onClick={toggleForm}>+</div>
-      {showForm && (
-        <form onSubmit={addMateriel} className="form-container">
-          <h3>Ajouter un Matériel</h3>
-          <input name="nom" type="text" placeholder="Nom" required />
-          <input name="quantite" type="number" placeholder="Quantité" required />
-          <input name="affection" type="text" placeholder="Affection" required />
-          <input name="lien" type="text" placeholder="Lien (facultatif)" />
-          <input name="emplacement" type="text" placeholder="Emplacement" required />
-          <input name="photo" type="text" placeholder="Photo (URL)" required />
-          <button type="submit">Ajouter</button>
-        </form>
-      )}
-      <div className="label-grid">
-        {materiels.map((materiel, index) => (
-          <div key={materiel.id} className="label-item">
-            <img src={materiel.photo} alt={materiel.denomination} onClick={() => viewPhoto(materiel.photo)} />
-            <div className={`label-title ${materiel.status}`}>
-              <strong>{materiel.denomination}</strong><br />
-              Quantité: {materiel.quantity}<br />
-              Affection: {materiel.affection}<br />
-              Emplacement: {materiel.emplacement}
-            </div>
-            <div className="label-icons">
-              <span onClick={() => updateStatus(index, 'ok', materiel.id)}>✔️</span>
-              <span onClick={() => updateStatus(index, 'anomalie', materiel.id)}>⚠️</span>
-              <span onClick={() => updateStatus(index, 'manquant', materiel.id)}>❌</span>
-              {comments[materiel.id] ? <span onClick={() => handleViewComment(materiel.id)}>💬</span> : null}
-            </div>
-          </div>
-        ))}
+      
+      <div className="filter-container">
+        <select value={selectedVehicule} onChange={handleVehiculeChange}>
+          <option value="Tous">Tous les véhicules</option>
+          {vehicules.map((vehicule) => (
+            <option key={vehicule.id} value={vehicule.denomination}>
+              {vehicule.denomination}
+            </option>
+          ))}
+        </select>
       </div>
+      {Object.entries(groupedMateriels).map(([emplacement, materiels]) => (
+        <div key={emplacement}>
+          <h3>{emplacement}</h3>
+          <div className="label-grid">
+            {materiels.map((materiel, index) => (
+              <div key={materiel.id} className="label-item">
+                <img src={materiel.photo} alt={materiel.denomination} onClick={() => viewPhoto(materiel.photo)} />
+                <div className={`label-title ${materiel.status}`}>
+                  <strong>{materiel.denomination}</strong>
+                  {materiel.lien && (
+                    <a href={materiel.lien} target="_blank" rel="noopener noreferrer" className="link-icon">🔗</a>
+                  )}
+                  <br />
+                  Quantité: {materiel.quantity}<br />
+                  {materiel.affection}
+                </div>
+                <div className="label-icons">
+                  <span onClick={() => updateStatus(index, 'ok', materiel.id)}>✔️</span>
+                  <span onClick={() => updateStatus(index, 'anomalie', materiel.id)}>⚠️</span>
+                  <span onClick={() => updateStatus(index, 'manquant', materiel.id)}>❌</span>
+                  {comments[materiel.id] ? <span onClick={() => handleViewComment(materiel.id)}>💬</span> : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
       {popupImage && (
         <div className="popup" onClick={closePopup}>
           <img src={popupImage} alt="Popup" />
@@ -208,8 +247,7 @@ function Materiel() {
       {viewComment && (
         <div className="popup" onClick={closePopup}>
           <div className="comment-view">
-            <div className="blinking-beacon">🚨</div>
-            <p className={`signed-comment ${viewComment.comment && viewComment.comment.includes('manquant') ? 'manquant' : viewComment.comment && viewComment.comment.includes('anomalie') ? 'anomalie' : ''}`}>{viewComment.comment}</p>
+            <p className="signed-comment">{viewComment.comment}</p>
              {viewComment.timestamp && <p className="comment-timestamp">{new Date(viewComment.timestamp?.seconds * 1000).toLocaleString()}</p>}
             <button onClick={closePopup}>Fermer</button>
           </div>

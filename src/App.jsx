@@ -10,19 +10,24 @@ import Profil from './pages/Profil';
 import Vehicules from './pages/Vehicules';
 import Materiel from './pages/Materiel';
 import Parametre from './pages/Parametre';
+import ParametreVehicules from './pages/ParametreVehicules';
+import EditVehicule from './pages/EditVehicule';
+import ParametreMateriel from './pages/ParametreMateriel';
+import EditMateriel from './pages/EditMateriel';
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const location = useLocation();
+  const allowedEmail = 'sebastien.dupressoir@icloud.com';
+
   const menuItems = [
     { name: 'Connexion', icon: '📶', path: '/connexion' },
     { name: 'Profil', icon: '👤', path: '/profil' },
     { name: 'Véhicules', icon: '🚗', path: '/vehicules' },
     { name: 'Matériel', icon: '🛠️', path: '/materiel' },
-    { name: 'Paramètre', icon: '⚙️', path: '/parametre' }
+    ...(user && user.email === allowedEmail ? [{ name: 'Paramètre', icon: '⚙️', path: '/parametre' }] : [])
   ];
-
-  const location = useLocation();
-  const [user, setUser] = useState(null);
-  const [profilePhoto, setProfilePhoto] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -86,7 +91,11 @@ function App() {
             <Route path="/profil" element={<Profil />} />
             <Route path="/vehicules" element={<Vehicules />} />
             <Route path="/materiel" element={<Materiel />} />
-            <Route path="/parametre" element={<Parametre />} />
+            {user && user.email === allowedEmail && <Route path="/parametre" element={<Parametre />} />}
+            {user && user.email === allowedEmail && <Route path="/parametre/vehicules" element={<ParametreVehicules />} />}
+            {user && user.email === allowedEmail && <Route path="/vehicules/:id" element={<EditVehicule />} />}
+            {user && user.email === allowedEmail && <Route path="/parametre/materiel" element={<ParametreMateriel />} />}
+            {user && user.email === allowedEmail && <Route path="/materiel/:id" element={<EditMateriel />} />}
           </Routes>
         </CSSTransition>
       </TransitionGroup>

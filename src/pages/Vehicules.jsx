@@ -177,9 +177,9 @@ function Vehicules() {
             <img src={vehicule.photo} alt={vehicule.denomination} onClick={() => viewPhoto(vehicule.photo)} />
             <div className={`label-title ${vehicule.status}`}>
               <strong>{vehicule.denomination}</strong><br />
-              {vehicule.immatriculation}<br />
-              {vehicule.vehicleType}<br />
-              {vehicule.caserne}
+              {vehicule.lien && (
+                <a href={vehicule.lien} target="_blank" rel="noopener noreferrer" className="link-icon">🔗</a>
+              )}
             </div>
             <div className="label-icons">
               <span onClick={() => updateStatus(index, 'ok', vehicule.id)}>✔️</span>
