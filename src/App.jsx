@@ -14,12 +14,14 @@ import ParametreVehicules from './pages/ParametreVehicules';
 import EditVehicule from './pages/EditVehicule';
 import ParametreMateriel from './pages/ParametreMateriel';
 import EditMateriel from './pages/EditMateriel';
+import VehiculeMateriels from './pages/VehiculeMateriels';
 
 function App() {
   const [user, setUser] = useState(null);
   const [profilePhoto, setProfilePhoto] = useState(null);
   const location = useLocation();
   const allowedEmail = 'sebastien.dupressoir@icloud.com';
+  const [currentTitle, setCurrentTitle] = useState('iVérif');
 
   const menuItems = [
     { name: 'Connexion', icon: '📶', path: '/connexion' },
@@ -55,11 +57,19 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (location.pathname === '/vehicules/:id/materiels') {
+      setCurrentTitle('Vérification Journalière');
+    } else {
+      setCurrentTitle('iVérif');
+    }
+  }, [location]);
+
   return (
     <div className="app-container">
       <div className="app-header">
         <div className="header-content">
-          <h1>iVérif</h1>
+          <h1 className={currentTitle === 'Vérification Journalière' ? 'blinking-title' : ''}>{currentTitle}</h1>
           {user && profilePhoto && (
             <div className="profile-bubble">
               <img src={profilePhoto} alt="Profile" />
@@ -96,6 +106,7 @@ function App() {
             {user && user.email === allowedEmail && <Route path="/vehicules/:id" element={<EditVehicule />} />}
             {user && user.email === allowedEmail && <Route path="/parametre/materiel" element={<ParametreMateriel />} />}
             {user && user.email === allowedEmail && <Route path="/materiel/:id" element={<EditMateriel />} />}
+            {user && user.email === allowedEmail && <Route path="/vehicules/:id/materiels" element={<VehiculeMateriels />} />}
           </Routes>
         </CSSTransition>
       </TransitionGroup>

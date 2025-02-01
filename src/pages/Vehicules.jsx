@@ -13,6 +13,7 @@ function Vehicules() {
   const [viewComment, setViewComment] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ show: false, index: null, id: null });
+  const [user, setUser] = useState(null);
 
   const toggleForm = () => {
     setShowForm(!showForm);
@@ -47,10 +48,14 @@ function Vehicules() {
       try {
         const user = auth.currentUser;
         if (user) {
+          setUser(user);
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             setUserProfile(userDoc.data());
           }
+        } else {
+          setUser(null);
+          setUserProfile(null);
         }
       } catch (error) {
         console.error("Erreur lors de la récupération du profil utilisateur:", error);
@@ -164,15 +169,21 @@ function Vehicules() {
           <div key={vehicule.id} className="label-item">
             <img src={vehicule.photo} alt={vehicule.denomination} onClick={() => viewPhoto(vehicule.photo)} />
             <div className={`label-title ${vehicule.status}`}>
-              <strong>{vehicule.denomination}</strong><br />
+              <strong>{vehicule.denomination}</strong>
+              <Link to={`/vehicules/${vehicule.id}/materiels`} className="control-icon">⚙️</Link>
+              <br />
               {vehicule.immatriculation}<br />
               {vehicule.vehicleType}<br />
               {vehicule.caserne}
             </div>
             <div className="label-icons">
-              <span onClick={() => updateStatus(index, 'ok', vehicule.id)}>✔️</span>
-              <span onClick={() => updateStatus(index, 'anomalie', vehicule.id)}>⚠️</span>
-              <span onClick={() => updateStatus(index, 'manquant', vehicule.id)}>❌</span>
+              {user ? (
+                <>
+                  <span onClick={() => updateStatus(index, 'ok', vehicule.id)}>✔️</span>
+                  <span onClick={() => updateStatus(index, 'anomalie', vehicule.id)}>⚠️</span>
+                  <span onClick={() => updateStatus(index, 'manquant', vehicule.id)}>❌</span>
+                </>
+              ) : null}
               {comments[vehicule.id] ? <span onClick={() => handleViewComment(vehicule.id)}>💬</span> : null}
             </div>
           </div>

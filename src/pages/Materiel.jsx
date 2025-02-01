@@ -8,13 +8,14 @@ function Materiel() {
   const [showForm, setShowForm] = useState(false);
   const [materiels, setMateriels] = useState([]);
   const [popupImage, setPopupImage] = useState(null);
-  const [commentPopup, setCommentPopup] = useState({ show: false, index: null, id: null });
+  const [commentPopup, setCommentPopup] = useState({ show: false, index: null, id: null, status: null });
   const [comments, setComments] = useState({});
   const [viewComment, setViewComment] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ show: false, index: null, id: null });
   const [selectedVehicule, setSelectedVehicule] = useState('Tous');
   const [vehicules, setVehicules] = useState([]);
+  const [user, setUser] = useState(null);
 
   const toggleForm = () => {
     setShowForm(!showForm);
@@ -50,10 +51,14 @@ function Materiel() {
       try {
         const user = auth.currentUser;
         if (user) {
+          setUser(user);
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             setUserProfile(userDoc.data());
           }
+        } else {
+          setUser(null);
+          setUserProfile(null);
         }
       } catch (error) {
         console.error("Erreur lors de la récupération du profil utilisateur:", error);
@@ -117,7 +122,7 @@ function Materiel() {
     if (status === 'ok') {
       setConfirmDelete({ show: true, index, id });
     } else {
-      setCommentPopup({ show: true, index, id });
+      setCommentPopup({ show: true, index, id, status });
       try {
         await updateDoc(doc(db, 'materials', id), { status });
       } catch (error) {
@@ -149,7 +154,7 @@ function Materiel() {
     const signedComment = userProfile ? `${userProfile.grade} ${userProfile.nom} ${userProfile.prenom}:\n${comment}` : comment;
     const timestamp = serverTimestamp();
     setComments({ ...comments, [commentPopup.id]: signedComment, [commentPopup.id + '_timestamp']: timestamp });
-    setCommentPopup({ show: false, index: null, id: null });
+    setCommentPopup({ show: false, index: null, id: null, status: null });
     try {
       await updateDoc(doc(db, 'materials', commentPopup.id), { comment: signedComment, timestamp });
     } catch (error) {
@@ -162,7 +167,7 @@ function Materiel() {
   };
 
   const handleCancelComment = () => {
-    setCommentPopup({ show: false, index: null, id: null });
+    setCommentPopup({ show: false, index: null, id: null, status: null });
   };
 
   const handleCancelDelete = () => {
@@ -211,18 +216,19 @@ function Materiel() {
               <div key={materiel.id} className="label-item">
                 <img src={materiel.photo} alt={materiel.denomination} onClick={() => viewPhoto(materiel.photo)} />
                 <div className={`label-title ${materiel.status}`}>
-                  <strong>{materiel.denomination}</strong>
-                  {materiel.lien && (
-                    <a href={materiel.lien} target="_blank" rel="noopener noreferrer" className="link-icon">🔗</a>
-                  )}
-                  <br />
+                  <strong>{materiel.denomination}</strong><br />
                   Quantité: {materiel.quantity}<br />
-                  {materiel.affection}
+                  {materiel.affection}<br />
+                  {materiel.emplacement}
                 </div>
                 <div className="label-icons">
-                  <span onClick={() => updateStatus(index, 'ok', materiel.id)}>✔️</span>
-                  <span onClick={() => updateStatus(index, 'anomalie', materiel.id)}>⚠️</span>
-                  <span onClick={() => updateStatus(index, 'manquant', materiel.id)}>❌</span>
+                  {user ? (
+                    <>
+                      <span onClick={() => updateStatus(index, 'ok', materiel.id)}>✔️</span>
+                      <span onClick={() => updateStatus(index, 'anomalie', materiel.id)}>⚠️</span>
+                      <span onClick={() => updateStatus(index, 'manquant', materiel.id)}>❌</span>
+                    </>
+                  ) : null}
                   {comments[materiel.id] ? <span onClick={() => handleViewComment(materiel.id)}>💬</span> : null}
                 </div>
               </div>
@@ -247,7 +253,8 @@ function Materiel() {
       {viewComment && (
         <div className="popup" onClick={closePopup}>
           <div className="comment-view">
-            <p className="signed-comment">{viewComment.comment}</p>
+            <div className="blinking-beacon">🚨</div>
+            <p className={`signed-comment ${viewComment.comment && viewComment.comment.includes('manquant') ? 'manquant' : viewComment.comment && viewComment.comment.includes('anomalie') ? 'anomalie' : ''}`}>{viewComment.comment}</p>
              {viewComment.timestamp && <p className="comment-timestamp">{new Date(viewComment.timestamp?.seconds * 1000).toLocaleString()}</p>}
             <button onClick={closePopup}>Fermer</button>
           </div>
